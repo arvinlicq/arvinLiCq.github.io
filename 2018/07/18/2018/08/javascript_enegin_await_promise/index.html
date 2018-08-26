@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+
+  
+  <title>从JS引擎理解Await b()与Promise.then(b)的堆栈处理 | ArvinLi</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="从JS引擎理解Await b()与Promise.then(b)的堆栈处理，Async/Await绝不仅仅只是语法糖。">
+<meta name="keywords" content="async,await,promise,javascript,堆栈">
+<meta property="og:type" content="article">
+<meta property="og:title" content="从JS引擎理解Await b()与Promise.then(b)的堆栈处理">
+<meta property="og:url" content="http://yoursite.com/2018/07/18/2018/08/javascript_enegin_await_promise/index.html">
+<meta property="og:site_name" content="ArvinLi">
+<meta property="og:description" content="从JS引擎理解Await b()与Promise.then(b)的堆栈处理，Async/Await绝不仅仅只是语法糖。">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:updated_time" content="2018-08-26T11:54:15.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="从JS引擎理解Await b()与Promise.then(b)的堆栈处理">
+<meta name="twitter:description" content="从JS引擎理解Await b()与Promise.then(b)的堆栈处理，Async/Await绝不仅仅只是语法糖。">
+  
+    <link rel="alternate" href="/atom.xml" title="ArvinLi" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">ArvinLi</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">主页</a>
+        
+          <a class="main-nav-link" href="/archives">归档</a>
+        
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://yoursite.com"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-2018/08/javascript_enegin_await_promise" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2018/07/18/2018/08/javascript_enegin_await_promise/" class="article-date">
+  <time datetime="2018-07-18T02:00:00.000Z" itemprop="datePublished">2018-07-18</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      从JS引擎理解Await b()与Promise.then(b)的堆栈处理
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p><strong>译者按：</strong> Async/Await真的只是简单的语法糖吗？No！</p>
+<a id="more"></a>
+<ul>
+<li><strong>原文</strong>：<a href="https://mathiasbynens.be/notes/async-stack-traces" target="_blank" rel="noopener">Asynchronous stack traces: why await beats .then()</a></li>
+<li><strong>作者</strong>: <a href="https://github.com/mathiasbynens" target="_blank" rel="noopener">Mathias Bynens</a>: Google V8引擎开发者</li>
+</ul>
+<p><strong>为了保证可读性，本文采用意译而非直译。另外，本文版权归原作者所有，翻译仅用于学习。</strong></p>
+<p>与直接使用Promise相比，使用<a href="https://developers.google.com/web/fundamentals/primers/async-functions" target="_blank" rel="noopener">Async/Await</a>不仅可以提高代码的可读性，同时也可以优化JavaScript引擎的执行方式。这篇博客将介绍Async/Await是如何优化JavaScript引擎对堆栈信息的处理。</p>
+<p>Async/Await与Promise最大区别在于：await b()会暂停所在的async函数的执行；而Promise.then(b)将b函数加入回调链中之后，会继续执行当前函数。对于堆栈来说，这个不同点非常关键。</p>
+<p>当一个Promise链抛出一个未处理的错误时，无论我们使用await b()还是Promise.then(b)，JavaScript引擎都需要打印错误信息及其堆栈。对于JavaScript引擎来说，两者获取堆栈的方式是不同的。</p>
+<h3 id="Promise-then-b"><a href="#Promise-then-b" class="headerlink" title="Promise.then(b)"></a>Promise.then(b)</h3><p>示例代码中，函数c()会在异步函数b()成功resolve之后执行：</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> a = <span class="function"><span class="params">()</span> =&gt;</span> &#123;</span><br><span class="line">	b().then(<span class="function"><span class="params">()</span> =&gt;</span> c());</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>当调用a()函数时，这些事情同步发生：</p>
+<ul>
+<li>b()函数被调用，它会返回一个Promise，这个Promise会在未来的某个时刻resolve。</li>
+<li>.then()回调函数(实际调用了c()函数)被添加到回调链。</li>
+</ul>
+<p>这样，a()函数内的代码就执行完了。a()函数不会被暂停，因此在异步函数b()resolve时，a()函数的作用域已经不存在了。假设b()或者c()抛出了一个错误，则堆栈信息中应该包含a()函数，因为它们都是在a()函数内被调用。对a()函数的任何引用都不存在了，要如何生成包含a()的堆栈信息呢？</p>
+<p>为了解决这个问题，JavaScript引擎需要做一些额外的工作：它会及时记录并且保存堆栈信息。对于V8引擎来说，堆栈信息附加在了b()函数所返回的Promise并在Promise链中传递，这样c()函数也能在需要的时候获取堆栈信息。</p>
+<p>记录堆栈信息需要时间，这样会降低性能；而保存堆栈信息需要占用额外的内存。</p>
+<p><em>使用<a href="https://www.fundebug.com/" target="_blank" rel="noopener">Fundebug</a>, 可以实时监控线上应用的错误，并获取完整的堆栈信息。</em></p>
+<h3 id="Await-b"><a href="#Await-b" class="headerlink" title="Await b()"></a>Await b()</h3><p>我们可以使用Async/Await实现同样的代码，同步函数c()会等到异步函数b()执行结束之后再执行：</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> a = <span class="keyword">async</span> () =&gt; &#123;</span><br><span class="line">	<span class="keyword">await</span> b();</span><br><span class="line">	c();</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>使用await时，无需存储当前的堆栈信息，因为存储b()到a()的指针就足够了。当等待b()函数执行时，a()函数被暂停了，因此a()函数的作用域还在内存可以访问。如果b()函数抛出一个错误，堆栈信息可以通过指针迅速生成。如果c()函数抛出一个错误，堆栈信息也可以像同步函数一样生成，因为c()函数是在a()函数中执行的。不论是b()还是c()，我们都不需要去存储堆栈信息，因为堆栈信息可以在需要的时候立即生成。而存储指针，显然比存储堆栈更加节省内存。</p>
+<h3 id="建议"><a href="#建议" class="headerlink" title="建议"></a>建议</h3><p>很多ECMAScript语法特性看起来都只是语法糖，其实并非如此，至少Async/Await绝不仅仅只是语法糖。</p>
+<p>为了让JavaScript引擎处理堆栈的方式性能更高并且更加节省内存，请遵循这些建议：</p>
+<ul>
+<li>使用Async/Await，而不是直接使用Promise</li>
+<li>使用<a href="https://github.com/babel/babel-preset-env" target="_blank" rel="noopener">babel-preset-env</a>，避免Babel不必要地转换Async/Await</li>
+</ul>
+<p>尽管V8引擎还没有实现这些优化，请遵循这些建议。当我们为V8实现这些优化的时候，你的程序可以保证最佳的性能。(作者是V8引擎的开发者)</p>
+<p>一般来说，尽量不要去使用Babel转码器。<a href="https://caniuse.com/#feat=serviceworkers" target="_blank" rel="noopener">所有支持Service Workers的浏览器</a>都支持Async/Await，因此没有必要去对Async/Await转码。这一点对于<a href="https://caniuse.com/#feat=es6-module" target="_blank" rel="noopener">JavaScript modules via script tag</a>同样适用。关于这一点，大家可以参考<a href="https://philipwalton.com/articles/deploying-es2015-code-in-production-today/" target="_blank" rel="noopener">Deploying ES2015+ Code in Production Today</a>。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://yoursite.com/2018/07/18/2018/08/javascript_enegin_await_promise/" data-id="cjlat4ptv000380x2hkuezlax" class="article-share-link">Share</a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/JavaScript/">JavaScript</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/翻译/">翻译</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2018/07/31/2018/08/deploying_es2015/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          在生产环境配置ES2015+代码
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2018/07/13/2018/08/bootstrap_alert_servers_for_angular_js/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">Angular-UI Bootstrap组件实现警报</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">标签</h3>
+    <div class="widget">
+      <ul class="tag-list"><li class="tag-list-item"><a class="tag-list-link" href="/tags/JavaScript/">JavaScript</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/JavaScript，angular，bootstrap，翻译/">JavaScript，angular，bootstrap，翻译</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/JavaScript，翻译/">JavaScript，翻译</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/this/">this</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/翻译/">翻译</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">标签云</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/JavaScript/" style="font-size: 20px;">JavaScript</a> <a href="/tags/JavaScript，angular，bootstrap，翻译/" style="font-size: 10px;">JavaScript，angular，bootstrap，翻译</a> <a href="/tags/JavaScript，翻译/" style="font-size: 15px;">JavaScript，翻译</a> <a href="/tags/this/" style="font-size: 10px;">this</a> <a href="/tags/翻译/" style="font-size: 15px;">翻译</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">归档</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/08/">八月 2018</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/07/">七月 2018</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/06/">六月 2018</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2018/08/06/2018/08/why-this-is-so-powerful/">为什么JavaScript中的this如此强大？</a>
+          </li>
+        
+          <li>
+            <a href="/2018/07/31/2018/08/deploying_es2015/">在生产环境配置ES2015+代码</a>
+          </li>
+        
+          <li>
+            <a href="/2018/07/18/2018/08/javascript_enegin_await_promise/">从JS引擎理解Await b()与Promise.then(b)的堆栈处理</a>
+          </li>
+        
+          <li>
+            <a href="/2018/07/13/2018/08/bootstrap_alert_servers_for_angular_js/">Angular-UI Bootstrap组件实现警报</a>
+          </li>
+        
+          <li>
+            <a href="/2018/07/07/2018/08/string_to_number/">JavaScript字符串转数字的5种方法及其陷阱</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2018 Arvin Li<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">主页</a>
+  
+    <a href="/archives" class="mobile-nav-link">归档</a>
+  
+</nav>
+    
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  <link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+  <script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+<script src="/js/script.js"></script>
+
+
+
+  </div>
+</body>
+</html>

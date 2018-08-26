@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+
+  
+  <title>为什么JavaScript中的this如此强大？ | ArvinLi</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="JavaScript中的this让开发者犯迷糊，但是也很灵活很强大。">
+<meta name="keywords" content="JavaScript, this">
+<meta property="og:type" content="article">
+<meta property="og:title" content="为什么JavaScript中的this如此强大？">
+<meta property="og:url" content="http://yoursite.com/2018/08/06/2018/08/why-this-is-so-powerful/index.html">
+<meta property="og:site_name" content="ArvinLi">
+<meta property="og:description" content="JavaScript中的this让开发者犯迷糊，但是也很灵活很强大。">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:updated_time" content="2018-08-26T11:51:03.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="为什么JavaScript中的this如此强大？">
+<meta name="twitter:description" content="JavaScript中的this让开发者犯迷糊，但是也很灵活很强大。">
+  
+    <link rel="alternate" href="/atom.xml" title="ArvinLi" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">ArvinLi</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">主页</a>
+        
+          <a class="main-nav-link" href="/archives">归档</a>
+        
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://yoursite.com"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-2018/08/why-this-is-so-powerful" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2018/08/06/2018/08/why-this-is-so-powerful/" class="article-date">
+  <time datetime="2018-08-06T02:00:00.000Z" itemprop="datePublished">2018-08-06</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      为什么JavaScript中的this如此强大？
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p><strong>译者按：</strong> JavaScript中的this让开发者犯迷糊，但是也很灵活很强大。</p>
+<a id="more"></a>
+<ul>
+<li>原文: <a href="https://medium.com/@kristyburge/why-this-is-so-powerful-in-javascript-34116f1ca5f2" target="_blank" rel="noopener">Why THIS is so powerful in JavaScript</a></li>
+</ul>
+<p><strong>为了保证可读性，本文采用意译而非直译。另外，本文版权归原作者所有，翻译仅用于学习。</strong></p>
+<p><strong>小编推荐：<a href="https://www.fundebug.com" target="_blank" rel="noopener">Fundebug</a>专注于JavaScript、微信小程序、微信小游戏，Node.js和Java线上bug实时监控。真的是一个很好用的bug监控服务，众多大佬公司都在使用。</strong></p>
+<p>“this”到底是什么？<br>在Vanilla JavaScript中，是一个让新手很困扰的问题。</p>
+<p>特别是对于我们这些没有编程背景的初学者。</p>
+<p>我曾经从事会计工作，对于JIB、AP、AR这些专业词很熟悉。因为词典会给它们一个清晰的定义。</p>
+<p>但是，“this”的定义却一点都不清晰。</p>
+<p>我记得第一次学习对象的时候，”this“在构造函数中被使用，但是从来没有清楚地解释。</p>
+<h2 id="到底什么是this？"><a href="#到底什么是this？" class="headerlink" title="到底什么是this？"></a>到底什么是this？</h2><p>这里是我个人给出的非官方的定义：</p>
+<blockquote>
+<p>“this”是JavaScript的一个关键字，它具体的含义依赖于使用的环境。</p>
+</blockquote>
+<p>至于在学习JavaScript的时候，”this”如此让人迷惑就是因为它的环境又基于你如何使用它。</p>
+<p>你甚至可以把它理解成为一个动态的关键字。</p>
+<p>我很喜欢Ryan Morr在<a href="http://ryanmorr.com/understanding-scope-and-context-in-javascript/" target="_blank" rel="noopener"> Understanding Scope and Context in JavaScript</a>中的一句话：</p>
+<blockquote>
+<p>Context is always the value of the this keyword which is a reference to the object that “owns” the currently executing code.</p>
+</blockquote>
+<p>但是，“this”的环境不一定和它的执行环境相同。</p>
+<p>因此，当我们使用“this”关键字的时候，我们实际上用来指向一个对象，那么到底是哪个对象？</p>
+<h2 id="我们来看一些示例"><a href="#我们来看一些示例" class="headerlink" title="我们来看一些示例"></a>我们来看一些示例</h2><ol>
+<li>“this”指向Window对象</li>
+<li>对象的方法<ol>
+<li>this作用于对象</li>
+<li>this作用于嵌套的对象</li>
+<li>this作用于对象，但是用了箭头(arrow function)函数</li>
+</ol>
+</li>
+<li>函数环境</li>
+<li>new关键字</li>
+</ol>
+<h2 id="1-“this”指向Window对象"><a href="#1-“this”指向Window对象" class="headerlink" title="1. “this”指向Window对象"></a>1. “this”指向Window对象</h2><p>如果你尝试在函数外使用“this”，它会指向全局，也就是Window对象。</p>
+<p>在全局的函数中使用的this也指向Window对象。</p>
+<p>你可以自己试一试：</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">console</span>.log(<span class="keyword">this</span>);</span><br><span class="line"></span><br><span class="line"><span class="comment">// returns the Window object</span></span><br><span class="line"><span class="comment">// Window &#123;	postMessage: ƒ, </span></span><br><span class="line"><span class="comment">// blur: ƒ, </span></span><br><span class="line"><span class="comment">// focus: ƒ, </span></span><br><span class="line"><span class="comment">// close: ƒ, </span></span><br><span class="line"><span class="comment">// frames: Window, …&#125;</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">myFunction</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">	<span class="built_in">console</span>.log(<span class="keyword">this</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Call the function</span></span><br><span class="line">myFunction(); </span><br><span class="line"></span><br><span class="line"><span class="comment">// returns the Window object! </span></span><br><span class="line"><span class="comment">// Window &#123;	postMessage: ƒ, </span></span><br><span class="line"><span class="comment">// blur: ƒ, </span></span><br><span class="line"><span class="comment">// focus: ƒ, </span></span><br><span class="line"><span class="comment">// close: ƒ, </span></span><br><span class="line"><span class="comment">// frames: Window, …&#125;</span></span><br></pre></td></tr></table></figure>
+<h2 id="2-对象方法"><a href="#2-对象方法" class="headerlink" title="2. 对象方法"></a>2. 对象方法</h2><p>当“this”在对象内部，那么指向对象本身。</p>
+<p>如下所示，创建一个对象，<code>intro</code>函数中使用了this，那么this指向<code>dog</code>对象。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> dog = &#123;</span><br><span class="line">  name: <span class="string">'Chester'</span>,</span><br><span class="line">  breed: <span class="string">'beagle'</span>,</span><br><span class="line">  intro: <span class="function"><span class="keyword">function</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">    <span class="built_in">console</span>.log(<span class="keyword">this</span>);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line">dog.intro();</span><br><span class="line"></span><br><span class="line"><span class="comment">// returns the dog object and all of it's properties and methods</span></span><br><span class="line"><span class="comment">// &#123;name: "Chester", breed: "beagle", intro: ƒ&#125;</span></span><br><span class="line"><span class="comment">//    breed:"beagle"</span></span><br><span class="line"><span class="comment">//    intro:ƒ ()</span></span><br><span class="line"><span class="comment">//    name:"Chester"</span></span><br><span class="line"><span class="comment">//    __proto__:Object</span></span><br></pre></td></tr></table></figure>
+<h2 id="对象嵌套"><a href="#对象嵌套" class="headerlink" title="对象嵌套"></a>对象嵌套</h2><p>如果使用了对象嵌套，那么this的值如何确定就变得错综复杂了。</p>
+<p>任何时候，如果你在对象中嵌套对象，那么”this”的使用取决于函数基于哪个对象定义。</p>
+<p>例子：<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> obj1 = &#123;</span><br><span class="line">  hello: <span class="function"><span class="keyword">function</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">    <span class="built_in">console</span>.log(<span class="string">'Hello world'</span>);</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">this</span>;</span><br><span class="line">  &#125;,</span><br><span class="line">  obj2: &#123;</span><br><span class="line">      breed: <span class="string">'dog'</span>,</span><br><span class="line">      speak: <span class="function"><span class="keyword">function</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">            <span class="built_in">console</span>.log(<span class="string">'woof!'</span>);</span><br><span class="line">            <span class="keyword">return</span> <span class="keyword">this</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br><span class="line"> </span><br><span class="line"><span class="built_in">console</span>.log(obj1);</span><br><span class="line"><span class="built_in">console</span>.log(obj1.hello());  <span class="comment">// logs 'Hello world' and returns obj1</span></span><br><span class="line"><span class="built_in">console</span>.log(obj1.obj2);</span><br><span class="line"><span class="built_in">console</span>.log(obj1.obj2.speak());  <span class="comment">// logs 'woof!' and returns obj2</span></span><br></pre></td></tr></table></figure></p>
+<p><strong>但是，要注意箭头函数并不遵守规则</strong></p>
+<p>在箭头函数中，“this”指向Window或则全局对象！</p>
+<p>你可以试试下面的代码：<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> objReg = &#123;</span><br><span class="line">  hello: <span class="function"><span class="keyword">function</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">this</span>;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;;</span><br><span class="line"> </span><br><span class="line"><span class="keyword">var</span> objArrow = &#123;</span><br><span class="line">  	hello: <span class="function"><span class="params">()</span> =&gt;</span> <span class="keyword">this</span></span><br><span class="line">&#125;;</span><br><span class="line"> </span><br><span class="line">objReg.hello(); <span class="comment">// returns the objReg object that we expect</span></span><br><span class="line">objArrow.hello(); <span class="comment">// returns the Window object!</span></span><br></pre></td></tr></table></figure></p>
+<blockquote>
+<p>根据MDN的定义：箭头函数有更加简洁的语法，并且没有自己的this绑定。</p>
+</blockquote>
+<p>所以，不要在定义对象方法的事或使用它。</p>
+<h2 id="3-“this”用于一般函数情况"><a href="#3-“this”用于一般函数情况" class="headerlink" title="3. “this”用于一般函数情况"></a>3. “this”用于一般函数情况</h2><p>函数在全局定义，那么this指向全局对象，即window。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">test</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">  <span class="built_in">console</span>.log(<span class="string">'hello world'</span>);</span><br><span class="line">  <span class="built_in">console</span>.log(<span class="keyword">this</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">test();</span><br><span class="line"></span><br><span class="line"><span class="comment">// hello world</span></span><br><span class="line"><span class="comment">// Window &#123;postMessage: ƒ, blur: ƒ, focus: ƒ, close: ƒ, frames: Window, …&#125;</span></span><br></pre></td></tr></table></figure>
+<p>但是，如果在严格模式下，“this”会返回undefined。因为严格模式下，不允许默认绑定。就算是window对象也不行。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">test</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line"><span class="meta">  'use strict'</span>;</span><br><span class="line">  <span class="keyword">return</span> <span class="keyword">this</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="built_in">console</span>.log( test() );</span><br><span class="line"><span class="comment">// returns undefined, not the Window object … interesting</span></span><br></pre></td></tr></table></figure>
+<h3 id="当在对象外调用函数，而函数中使用了this"><a href="#当在对象外调用函数，而函数中使用了this" class="headerlink" title="当在对象外调用函数，而函数中使用了this"></a>当在对象外调用函数，而函数中使用了this</h3><p>dog对象在定义的时候没有定义方法，知道我创建dog.foo，将chase函数绑定给它。</p>
+<p>调用foo函数，那么chase函数中的this会指向dog对象。如果没有将chase函数和某个对象绑定，那么会报错或则返回未定义。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> dog = &#123;</span><br><span class="line">  breed: <span class="string">'Beagles'</span>,</span><br><span class="line">  lovesToChase: <span class="string">'rabbits'</span></span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">chase</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">  <span class="built_in">console</span>.log(<span class="keyword">this</span>.breed + <span class="string">' loves chasing '</span> + <span class="keyword">this</span>.lovesToChase + <span class="string">'.'</span>); </span><br><span class="line"><span class="comment">//   console.log(this);</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">dog.foo = chase;</span><br><span class="line">dog.foo(); <span class="comment">// returns Beagles loves chasing rabbits.</span></span><br><span class="line"></span><br><span class="line">chase(); <span class="comment">// returns undefined because when run in the global context, window object does not have these properties defined</span></span><br></pre></td></tr></table></figure>
+<p>直接调用chase函数，返回未定义，因为在全局环境下，this指向window对象。</p>
+<h2 id="4-“new”关键字"><a href="#4-“new”关键字" class="headerlink" title="4. “new”关键字"></a>4. “new”关键字</h2><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">Dog</span>(<span class="params">breed, name, friends</span>)</span>&#123;</span><br><span class="line">    <span class="keyword">this</span>.breed = breed;</span><br><span class="line">    <span class="keyword">this</span>.name = name;</span><br><span class="line">    <span class="keyword">this</span>.friends = friends;	</span><br><span class="line">    <span class="keyword">this</span>.intro = <span class="function"><span class="keyword">function</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">        <span class="built_in">console</span>.log(<span class="string">`Hi, my name is <span class="subst">$&#123;<span class="keyword">this</span>.name&#125;</span> and I’m a <span class="subst">$&#123;<span class="keyword">this</span>.breed&#125;</span>`</span>);</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">this</span>;</span><br><span class="line">    &#125;; </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>注意，在定义Dog函数的时候，其this没有特定的值。</p>
+<p>每一次使用new关键字创建一个新的Dog实例，this就会指向该对象。</p>
+<p>原则上和下面的语法是一致的：<br><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">var</span> str = <span class="keyword">new</span> <span class="built_in">String</span>(<span class="string">'Hello world'</span>);</span><br><span class="line"><span class="comment">/*******</span></span><br><span class="line"><span class="comment">You could do the above, but it's best to avoid it (instead do like the variable str2 below)</span></span><br><span class="line"><span class="comment">(because JavaScript knows that anything inside single or double quotes has the type of String)</span></span><br><span class="line"><span class="comment">Same goes for other primitives. This is for example purposes only. </span></span><br><span class="line"><span class="comment"><span class="doctag">NOTE:</span> To clarify -- the only time I ever use the new keyword in practice is when I use a function constructor and create my own object type.</span></span><br><span class="line"><span class="comment">*******/</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">var</span> str2 = <span class="string">'Hello world'</span>;</span><br><span class="line"><span class="comment">// both have the prototype of String and inherit all the String methods and properties</span></span><br></pre></td></tr></table></figure></p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Using the Dog prototype, create a new instance </span></span><br><span class="line"><span class="keyword">var</span> chester = <span class="keyword">new</span> Dog(<span class="string">'beagle'</span>, <span class="string">'Chester'</span>, [<span class="string">'Gracie'</span>, <span class="string">'Josey'</span>, <span class="string">'Barkley'</span>]);</span><br><span class="line">chester.intro();        <span class="comment">// returns Hi, my name is Chester and I'm a beagle</span></span><br><span class="line"><span class="built_in">console</span>.log(chester);   <span class="comment">// returns Dog &#123;breed: "beagle", name: "Chester", friends: Array(3), intro: ƒ&#125;</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// Here's another example:</span></span><br><span class="line"><span class="keyword">var</span> City = <span class="function"><span class="keyword">function</span>(<span class="params">city, state</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">this</span>.city = city || <span class="string">"Phoenix"</span>;</span><br><span class="line">  <span class="keyword">this</span>.state = state || <span class="string">"AZ"</span>;</span><br><span class="line">  <span class="keyword">this</span>.sentence = <span class="function"><span class="keyword">function</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">    <span class="built_in">console</span>.log(<span class="string">`I live in <span class="subst">$&#123;<span class="keyword">this</span>.city&#125;</span>, <span class="subst">$&#123;<span class="keyword">this</span>.state&#125;</span>.`</span>);</span><br><span class="line">  &#125;;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">var</span> phoenix = <span class="keyword">new</span> City(); <span class="comment">// use the default parameters</span></span><br><span class="line"><span class="built_in">console</span>.log(phoenix); <span class="comment">// returns the phoenix object (an instance of the City prototype)</span></span><br><span class="line">phoenix.sentence(); <span class="comment">// returns "I live in Phoenix, AZ."</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">var</span> spokane = <span class="keyword">new</span> City(<span class="string">'Spokane'</span>, <span class="string">'WA'</span>);</span><br><span class="line"><span class="built_in">console</span>.log(spokane); <span class="comment">// returns the spokane object (another instance of the City prototype)</span></span><br><span class="line">spokane.sentence(); <span class="comment">// returns "I live in Spokane, WA."</span></span><br></pre></td></tr></table></figure>
+<h3 id="new关键字很重要"><a href="#new关键字很重要" class="headerlink" title="new关键字很重要"></a>new关键字很重要</h3><p>它可以将this指向到新定义的对象实例。这样的好处在于，我们可以有一个定义，来声明多个实例。</p>
+<p>想象一下你的社交账号，我们可以定义每一个社交账号叫“Friend”，每一次创建一个新的账户，它们都会继承所有的属性和方法，但是传入个性化的名字，密码，兴趣，工作等数据。</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Constructor Function</span></span><br><span class="line"><span class="keyword">var</span> Friend = <span class="function"><span class="keyword">function</span>(<span class="params">name, password, interests, job</span>)</span>&#123;</span><br><span class="line">  <span class="keyword">this</span>.fullName = name;</span><br><span class="line">  <span class="keyword">this</span>.password = password;</span><br><span class="line">  <span class="keyword">this</span>.interests = interests;</span><br><span class="line">  <span class="keyword">this</span>.job = job;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">sayHello</span>(<span class="params"></span>)</span>&#123;</span><br><span class="line">   <span class="comment">// uncomment the console.log to see the object that 'this' points to</span></span><br><span class="line">  <span class="comment">//  console.log(this); </span></span><br><span class="line">  <span class="keyword">return</span> <span class="string">`Hi, my name is <span class="subst">$&#123;<span class="keyword">this</span>.fullName&#125;</span> and I'm a <span class="subst">$&#123;<span class="keyword">this</span>.job&#125;</span>. Let's be friends!`</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// Create one or multiple instances of the Friend prototype with the keyword 'new'</span></span><br><span class="line"><span class="keyword">var</span> john = <span class="keyword">new</span> Friend(<span class="string">'John Smith'</span>, <span class="string">'badpassword'</span>, [<span class="string">'hiking'</span>, <span class="string">'biking'</span>, <span class="string">'skiing'</span>], <span class="string">'teacher'</span>); </span><br><span class="line"></span><br><span class="line"><span class="built_in">console</span>.log(john); </span><br><span class="line"></span><br><span class="line"><span class="comment">// Assign the function to the greeting key on the john object</span></span><br><span class="line">john.greeting = sayHello; </span><br><span class="line"></span><br><span class="line"><span class="comment">// Call the the new method</span></span><br><span class="line"><span class="built_in">console</span>.log( john.greeting() ); </span><br><span class="line"></span><br><span class="line"><span class="comment">// Remember, you can't call sayHello() as a function; it will return "Hi, my name is undefined and I'm a undefined. Let's be friends!"</span></span><br><span class="line"><span class="comment">// Because the function's context is global and the window object does NOT have the keys that belong to the Friend prototype</span></span><br><span class="line"><span class="built_in">console</span>.log( sayHello() ) ;</span><br></pre></td></tr></table></figure>
+<h2 id="结论"><a href="#结论" class="headerlink" title="结论"></a>结论</h2><p>还有一种方式可以传递this值，那就是call，apply，和bind函数。<br>不过本文不再赘述。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://yoursite.com/2018/08/06/2018/08/why-this-is-so-powerful/" data-id="cjlat4pu9000j80x2hmsq0t9m" class="article-share-link">Share</a>
+      
+      
+  <ul class="article-tag-list"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/JavaScript/">JavaScript</a></li><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/this/">this</a></li></ul>
+
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+  
+    <a href="/2018/07/31/2018/08/deploying_es2015/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">在生产环境配置ES2015+代码</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">标签</h3>
+    <div class="widget">
+      <ul class="tag-list"><li class="tag-list-item"><a class="tag-list-link" href="/tags/JavaScript/">JavaScript</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/JavaScript，angular，bootstrap，翻译/">JavaScript，angular，bootstrap，翻译</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/JavaScript，翻译/">JavaScript，翻译</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/this/">this</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/翻译/">翻译</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">标签云</h3>
+    <div class="widget tagcloud">
+      <a href="/tags/JavaScript/" style="font-size: 20px;">JavaScript</a> <a href="/tags/JavaScript，angular，bootstrap，翻译/" style="font-size: 10px;">JavaScript，angular，bootstrap，翻译</a> <a href="/tags/JavaScript，翻译/" style="font-size: 15px;">JavaScript，翻译</a> <a href="/tags/this/" style="font-size: 10px;">this</a> <a href="/tags/翻译/" style="font-size: 15px;">翻译</a>
+    </div>
+  </div>
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">归档</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/08/">八月 2018</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/07/">七月 2018</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/06/">六月 2018</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2018/08/06/2018/08/why-this-is-so-powerful/">为什么JavaScript中的this如此强大？</a>
+          </li>
+        
+          <li>
+            <a href="/2018/07/31/2018/08/deploying_es2015/">在生产环境配置ES2015+代码</a>
+          </li>
+        
+          <li>
+            <a href="/2018/07/18/2018/08/javascript_enegin_await_promise/">从JS引擎理解Await b()与Promise.then(b)的堆栈处理</a>
+          </li>
+        
+          <li>
+            <a href="/2018/07/13/2018/08/bootstrap_alert_servers_for_angular_js/">Angular-UI Bootstrap组件实现警报</a>
+          </li>
+        
+          <li>
+            <a href="/2018/07/07/2018/08/string_to_number/">JavaScript字符串转数字的5种方法及其陷阱</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2018 Arvin Li<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">主页</a>
+  
+    <a href="/archives" class="mobile-nav-link">归档</a>
+  
+</nav>
+    
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  <link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+  <script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+<script src="/js/script.js"></script>
+
+
+
+  </div>
+</body>
+</html>
